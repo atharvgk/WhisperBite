@@ -1,21 +1,21 @@
-# 🍽️ WhisperBite — Agentic AI Restaurant Reservation Platform
+# WhisperBite — Agentic AI Restaurant Reservation Platform
 
 > **AI-powered restaurant reservation system** with voice booking, multi-turn conversation, weather-aware seating, and admin analytics.
 
-## ✨ Features
+## Features
 
 | Feature | Description |
 |---------|-------------|
-| 🤖 AI Agent | LangChain-powered conversational booking assistant (Groq LLaMA 3.3 70B) |
-| 🎙️ Voice Booking | Speak to book — Web Speech API (STT + TTS) |
-| 🧠 Multi-turn Memory | Session-based slot filling with correction support |
-| 🌦️ Weather-Aware | OpenWeatherMap integration for seating recommendations |
-| 📅 Real-time Availability | Capacity-aware slot checking with alternatives |
-| 🔐 Admin Auth | JWT-based authentication with protected routes |
-| 📊 Analytics Dashboard | Charts: peak hours, cuisine distribution, daily trends |
-| 🎨 Dark/Light Mode | Premium UI with Framer Motion animations |
+| AI Agent | LangChain-powered conversational booking assistant (Groq LLaMA 3.3 70B) |
+| Voice Booking | Speak to book — Web Speech API (STT + TTS) |
+| Multi-turn Memory | Session-based slot filling with correction support |
+| Weather-Aware | OpenWeatherMap integration for seating recommendations |
+| Real-time Availability | Capacity-aware slot checking with alternatives |
+| Admin Auth | JWT-based authentication with protected routes |
+| Analytics Dashboard | Charts: peak hours, cuisine distribution, daily trends |
+| Dark/Light Mode | Premium UI with Framer Motion animations |
 
-## 🏗️ Architecture
+## Architecture
 
 ```mermaid
 graph TB
@@ -58,7 +58,7 @@ graph TB
     AUTH --> AD2
 ```
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 **Frontend:** React, Vite, React Router, Framer Motion, Recharts, Lucide Icons  
 **Backend:** Node.js, Express, TypeScript, LangChain, Groq API  
@@ -66,7 +66,7 @@ graph TB
 **AI:** LLaMA 3.3 70B (via Groq), LangChain tool-calling agent  
 **Voice:** Web Speech API (SpeechRecognition + SpeechSynthesis)
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 - Node.js 18+
@@ -106,7 +106,7 @@ npm run dev               # Starts on :5173
 | `MAX_GUESTS_PER_SLOT` | Capacity per time slot (default: `20`) |
 | `BCRYPT_SALT_ROUNDS` | Password hashing rounds (default: `12`) |
 
-## 📋 API Endpoints
+## API Endpoints
 
 | Method | Endpoint | Auth | Description |
 |--------|----------|------|-------------|
@@ -120,7 +120,7 @@ npm run dev               # Starts on :5173
 | PATCH | `/api/bookings/:id/status` | Admin | Update booking status |
 | GET | `/api/bookings/availability` | - | Check slot availability |
 
-## 🧠 Design Decisions
+## Design Decisions
 
 **Why one LangChain agent?** A single agent with multiple tools is simpler to reason about and maintain than chained agents. The tool-calling pattern lets the LLM decide which tools to invoke based on context.
 
@@ -134,7 +134,7 @@ npm run dev               # Starts on :5173
 
 **Why optimistic concurrency?** Mongoose's `optimisticConcurrency` option prevents race conditions when two admin users try to update the same booking simultaneously.
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 WhisperBite/
