@@ -1,0 +1,108 @@
+.voice-input-wrapper {
+    position: relative;
+}
+
+.mic-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-input);
+    color: var(--text-secondary);
+    transition: all 0.2s;
+    position: relative;
+    overflow: visible;
+}
+
+.mic-btn:hover:not(:disabled) {
+    background: var(--primary-light);
+    color: var(--primary);
+}
+
+.mic-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.mic-btn.listening {
+    background: var(--accent);
+    color: #fff;
+    box-shadow: 0 0 0 0 rgba(255, 107, 107, 0.5);
+    animation: micPulseBtn 1.5s infinite;
+}
+
+.mic-btn.transcribing {
+    background: var(--primary-light);
+    color: var(--primary);
+}
+
+.spin {
+    animation: spinAnim 1s linear infinite;
+}
+
+@keyframes spinAnim {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.mic-pulse {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    border: 2px solid var(--accent);
+    animation: micPulseRing 1.5s infinite;
+    pointer-events: none;
+}
+
+@keyframes micPulseBtn {
+    0% {
+        box-shadow: 0 0 0 0 rgba(255, 107, 107, 0.5);
+    }
+
+    70% {
+        box-shadow: 0 0 0 12px rgba(255, 107, 107, 0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(255, 107, 107, 0);
+    }
+}
+
+@keyframes micPulseRing {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+
+    100% {
+        transform: scale(1.8);
+        opacity: 0;
+    }
+}
+
+.live-transcript {
+    position: absolute;
+    bottom: 55px;
+    right: 16px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 8px 14px;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    max-width: 260px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    box-shadow: var(--shadow-md);
+    animation: fadeIn 0.2s ease;
+    z-index: 10;
+}

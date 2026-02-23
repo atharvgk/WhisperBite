@@ -1,0 +1,51 @@
+.admin-page {
+    padding-top: 80px;
+    min-height: 100vh;
+}
+
+.admin-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 32px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 24px;
+}
+
+.admin-header h1 {
+    font-size: 1.6rem;
+    font-weight: 700;
+}
+
+.admin-tabs {
+    display: flex;
+    gap: 8px;
+}
+
+.admin-tab {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 18px;
+    border-radius: var(--radius-md);
+    background: var(--bg-input);
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.admin-tab.active {
+    background: var(--primary-light);
+    color: var(--primary);
+}
+
+.admin-tab:hover {
+    background: var(--primary-light);
+    color: var(--primary);
+}
+
+.admin-content {
+    padding-bottom: 60px;
+}

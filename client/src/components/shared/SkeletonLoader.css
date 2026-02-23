@@ -1,0 +1,14 @@
+.skeleton-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.skeleton {
+    background: linear-gradient(90deg,
+            var(--bg-input) 0%,
+            rgba(255, 255, 255, 0.06) 50%,
+            var(--bg-input) 100%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite ease-in-out;
+}
