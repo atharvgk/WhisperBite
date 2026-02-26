@@ -37,7 +37,7 @@ export async function login(req: Request, res: Response): Promise<void> {
                 role: admin.role,
             },
             config.jwtSecret,
-            { expiresIn: config.jwtExpiry }
+            { expiresIn: config.jwtExpiry as jwt.SignOptions['expiresIn'] }
         );
 
         logger.info(`Admin logged in: ${admin.email}`);
