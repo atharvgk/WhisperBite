@@ -11,6 +11,10 @@ export interface Props {
 export default function ChatBubble({ role, content, timestamp }: Props) {
     const isAgent = role === 'assistant';
 
+    const timeStr = timestamp
+        ? new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        : null;
+
     return (
         <motion.div
             className={`bubble-row ${isAgent ? 'agent' : 'user'}`}
@@ -29,6 +33,9 @@ export default function ChatBubble({ role, content, timestamp }: Props) {
                 aria-label={`${isAgent ? 'Assistant' : 'You'}: ${content}`}
             >
                 {content}
+                {timeStr && (
+                    <span className="bubble-timestamp" aria-hidden="true">{timeStr}</span>
+                )}
             </div>
             {!isAgent && (
                 <div className="bubble-avatar user-avatar" aria-hidden="true">

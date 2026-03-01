@@ -13,13 +13,14 @@ const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 const MESSAGES_KEY = 'whisperbite-messages';
 const SESSION_KEY = 'whisperbite-session';
 
-interface Message { role: 'user' | 'assistant'; content: string; }
+interface Message { role: 'user' | 'assistant'; content: string; timestamp: number; weatherData?: WeatherInfo | null; }
 interface WeatherInfo { temperature: number | null; condition: string; seatingRecommendation: string; description?: string; icon?: string; }
 interface BookingSummary { bookingId: string; customerName?: string; numberOfGuests?: number; bookingDate?: string; bookingTime?: string; cuisinePreference?: string; specialRequests?: string; seatingPreference?: string; }
 
 const INITIAL_MESSAGE: Message = {
     role: 'assistant',
-    content: "👋 Hello! I'm WhisperBite, your AI reservation assistant. How can I help you today? You can type or use the microphone to speak."
+    content: "👋 Hello! I'm WhisperBite, your AI reservation assistant. How can I help you today? You can type or use the microphone to speak.",
+    timestamp: Date.now(),
 };
 
 function getSessionId() {
@@ -89,7 +90,6 @@ export default function BookingPage() {
     const [input, setInput] = useState<string>('');
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [ttsEnabled, setTtsEnabled] = useState<boolean>(true);
-    const [weatherData, setWeatherData] = useState<WeatherInfo | null>(null);
     const [bookingSummary, setBookingSummary] = useState<BookingSummary | null>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
@@ -129,9 +129,9 @@ export default function BookingPage() {
         speechSynthesis.speak(utterance);
     }, [ttsEnabled]);
 
-    const addMessage = useCallback((role: 'user' | 'assistant', content: string) => {
+    const addMessage = useCallback((role: 'user' | 'assistant', content: string, weatherData?: WeatherInfo | null) => {
         setMessages(prev => {
-            const updated = [...prev, { role, content }];
+            const updated = [...prev, { role, content, timestamp: Date.now(), weatherData }];
             saveMessages(updated);
             return updated;
         });
@@ -154,12 +154,11 @@ export default function BookingPage() {
 
             if (data.success) {
                 const responseText = data.data.message;
-                addMessage('assistant', responseText);
-                speakText(responseText);
 
-                // Check for weather info
+                // Check for weather info to attach inline to this message
                 const weather = tryParseWeather(responseText);
-                if (weather) setWeatherData(weather);
+                addMessage('assistant', responseText, weather || null);
+                speakText(responseText);
 
                 // Check for booking confirmation
                 const summary = tryParseBookingSummary(responseText);
@@ -194,7 +193,6 @@ export default function BookingPage() {
         localStorage.removeItem(SESSION_KEY);
         sessionId.current = getSessionId();
         setMessages([INITIAL_MESSAGE]);
-        setWeatherData(null);
         setBookingSummary(null);
     };
 
@@ -222,7 +220,16 @@ export default function BookingPage() {
                 <div className="chat-messages" role="log" aria-live="polite" aria-label="Chat messages">
                     <AnimatePresence>
                         {messages.map((msg, i) => (
-                            <ChatBubble key={i} role={msg.role} content={msg.content} />
+                            <div key={i}>
+                                <ChatBubble role={msg.role} content={msg.content} timestamp={new Date(msg.timestamp)} />
+                                {msg.role === 'assistant' && msg.weatherData && (
+                                    <div className="inline-weather">
+                                        <WeatherCard data={msg.weatherData} onClose={() => {
+                                            setMessages(prev => prev.map((m, idx) => idx === i ? { ...m, weatherData: null } : m));
+                                        }} />
+                                    </div>
+                                )}
+                            </div>
                         ))}
                     </AnimatePresence>
                     {isLoading && (
@@ -232,10 +239,6 @@ export default function BookingPage() {
                     )}
                     <div ref={messagesEndRef} />
                 </div>
-
-                {weatherData && (
-                    <WeatherCard data={weatherData} onClose={() => setWeatherData(null)} />
-                )}
 
                 <form className="chat-input-area" onSubmit={handleSubmit}>
                     <VoiceInput
@@ -271,7 +274,11 @@ export default function BookingPage() {
             </div>
 
             {bookingSummary && (
-                <BookingSummaryModal data={bookingSummary} onClose={() => setBookingSummary(null)} />
+                <BookingSummaryModal
+                    data={bookingSummary}
+                    onClose={() => setBookingSummary(null)}
+                    onReset={handleClearChat}
+                />
             )}
         </div>
     );

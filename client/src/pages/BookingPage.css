@@ -81,6 +81,12 @@
     gap: 12px;
 }
 
+.inline-weather {
+    padding: 0 16px 4px;
+    max-width: 340px;
+    align-self: flex-start;
+}
+
 .chat-input-area {
     display: flex;
     align-items: center;
