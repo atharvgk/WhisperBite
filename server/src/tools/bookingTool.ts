@@ -1,31 +1,53 @@
 import { DynamicStructuredTool } from '@langchain/core/tools';
 import { z } from 'zod';
-import { v4 as uuidv4 } from 'uuid';
 import { Booking } from '../models/Booking';
 import logger from '../utils/logger';
 
+/**
+ * Converts a 24h time string "HH:MM" or natural time "7:00 PM" to "h:mm a" format.
+ * If already in 12h format, returns as-is after normalizing.
+ */
+function normalizeBookingTime(input: string): string {
+    // Already in 12h format (contains AM/PM)
+    if (/am|pm/i.test(input)) {
+        return input.trim();
+    }
+    // 24h format
+    const match = input.match(/^(\d{1,2}):(\d{2})$/);
+    if (match) {
+        const hours = parseInt(match[1]);
+        const minutes = match[2];
+        const period = hours >= 12 ? 'PM' : 'AM';
+        const h = hours % 12 || 12;
+        return `${h}:${minutes} ${period}`;
+    }
+    return input;
+}
+
 export const bookingTool = new DynamicStructuredTool({
     name: 'create_booking',
-    description: 'Create a new restaurant reservation. Only call this tool when ALL required fields have been confirmed by the customer: customerName, numberOfGuests, bookingDate, bookingTime. Returns the booking confirmation with a booking ID.',
+    description: 'Create a new restaurant reservation. Only call this tool when ALL required fields have been confirmed by the customer: customerName, numberOfGuests, bookingDate, bookingTime, cuisinePreference. Returns the booking confirmation with a booking ID.',
     schema: z.object({
         customerName: z.string().describe('Full name of the customer'),
-        numberOfGuests: z.number().min(1).describe('Number of guests'),
+        numberOfGuests: z.number().min(1).max(20).describe('Number of guests (max 20)'),
         bookingDate: z.string().describe('Reservation date in YYYY-MM-DD format'),
-        bookingTime: z.string().describe('Reservation time in HH:MM (24h) format'),
-        cuisinePreference: z.string().optional().describe('Preferred cuisine type (e.g., Italian, Japanese, Indian)'),
+        bookingTime: z.string().describe('Reservation time, e.g. "7:00 PM" or "19:00"'),
+        cuisinePreference: z.enum(['Italian', 'Chinese', 'Indian', 'Japanese', 'Mexican', 'Continental', 'Other']).describe('Preferred cuisine type'),
         specialRequests: z.string().optional().describe('Any special requests (dietary, occasion, etc.)'),
-        seatingPreference: z.enum(['indoor', 'outdoor', 'no_preference']).optional().describe('Seating preference'),
+        seatingPreference: z.enum(['indoor', 'outdoor', 'no preference']).optional().describe('Seating preference'),
         weatherInfo: z.object({
             temperature: z.number().nullable().optional(),
             condition: z.string().optional(),
+            description: z.string().optional(),
+            icon: z.string().optional(),
             seatingRecommendation: z.string().optional(),
-        }).optional().describe('Weather info from the weather tool'),
+        }).optional().describe('Weather info from the check_weather tool'),
     }),
     func: async (input) => {
         logger.info('Booking tool called', { input });
 
         try {
-            // Validate date is in the future
+            // Convert date string to Date object
             const bookingDate = new Date(input.bookingDate);
             const today = new Date();
             today.setHours(0, 0, 0, 0);
@@ -37,47 +59,48 @@ export const bookingTool = new DynamicStructuredTool({
                 });
             }
 
-            // Validate time format
-            const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
-            if (!timeRegex.test(input.bookingTime)) {
-                return JSON.stringify({
-                    success: false,
-                    error: 'Invalid time format. Please use HH:MM (24-hour format).',
-                });
-            }
+            // Normalize time to "7:00 PM" format
+            const bookingTime = normalizeBookingTime(input.bookingTime);
 
-            const bookingId = `WB-${uuidv4().substring(0, 8).toUpperCase()}`;
+            // Generate booking ID
+            const bookingId = 'BK-' + Date.now();
 
             const booking = new Booking({
                 bookingId,
-                customerName: input.customerName,
+                customerName: input.customerName.trim(),
                 numberOfGuests: input.numberOfGuests,
-                bookingDate: input.bookingDate,
-                bookingTime: input.bookingTime,
-                cuisinePreference: input.cuisinePreference || 'any',
+                bookingDate,
+                bookingTime,
+                cuisinePreference: input.cuisinePreference,
                 specialRequests: input.specialRequests || '',
-                seatingPreference: input.seatingPreference || 'no_preference',
-                weatherInfo: input.weatherInfo || {
-                    temperature: null,
-                    condition: 'unknown',
-                    seatingRecommendation: 'indoor',
+                seatingPreference: input.seatingPreference || 'no preference',
+                weatherInfo: {
+                    temperature: input.weatherInfo?.temperature ?? null,
+                    condition: input.weatherInfo?.condition ?? 'unknown',
+                    description: input.weatherInfo?.description ?? '',
+                    icon: input.weatherInfo?.icon ?? '',
+                    seatingRecommendation: input.weatherInfo?.seatingRecommendation ?? 'indoor',
                 },
                 status: 'confirmed',
             });
 
             await booking.save();
 
+            const formattedDate = bookingDate.toLocaleDateString('en-IN', {
+                weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+            });
+
             const result = {
                 success: true,
                 bookingId,
-                message: `Reservation confirmed! Your booking ID is ${bookingId}.`,
+                message: `✅ Booking Confirmed! ID: ${bookingId} | Name: ${input.customerName} | Date: ${formattedDate} | Time: ${bookingTime} | Guests: ${input.numberOfGuests} | Cuisine: ${input.cuisinePreference} | Seating: ${input.seatingPreference || 'no preference'}`,
                 details: {
                     name: input.customerName,
                     guests: input.numberOfGuests,
-                    date: input.bookingDate,
-                    time: input.bookingTime,
-                    cuisine: input.cuisinePreference || 'any',
-                    seating: input.seatingPreference || 'no_preference',
+                    date: formattedDate,
+                    time: bookingTime,
+                    cuisine: input.cuisinePreference,
+                    seating: input.seatingPreference || 'no preference',
                     specialRequests: input.specialRequests || 'none',
                 },
             };
@@ -86,6 +109,12 @@ export const bookingTool = new DynamicStructuredTool({
             return JSON.stringify(result);
         } catch (error: any) {
             logger.error(`Booking tool error: ${error.message}`);
+            if (error.code === 11000) {
+                return JSON.stringify({
+                    success: false,
+                    error: 'A booking with that ID already exists. Please try again.',
+                });
+            }
             return JSON.stringify({
                 success: false,
                 error: 'Failed to create booking. Please try again.',
@@ -96,9 +125,9 @@ export const bookingTool = new DynamicStructuredTool({
 
 export const cancelBookingTool = new DynamicStructuredTool({
     name: 'cancel_booking',
-    description: 'Cancel an existing restaurant reservation by booking ID. This performs a soft delete by setting status to cancelled.',
+    description: 'Cancel an existing restaurant reservation by booking ID.',
     schema: z.object({
-        bookingId: z.string().describe('The booking ID to cancel (e.g., WB-XXXXXXXX)'),
+        bookingId: z.string().describe('The booking ID to cancel (e.g., BK-1234567890)'),
     }),
     func: async ({ bookingId }) => {
         logger.info(`Cancel booking tool called: ${bookingId}`);
@@ -145,10 +174,10 @@ export const updateBookingTool = new DynamicStructuredTool({
         bookingId: z.string().describe('The booking ID to update'),
         numberOfGuests: z.number().optional().describe('Updated number of guests'),
         bookingDate: z.string().optional().describe('Updated date in YYYY-MM-DD format'),
-        bookingTime: z.string().optional().describe('Updated time in HH:MM format'),
-        cuisinePreference: z.string().optional().describe('Updated cuisine preference'),
+        bookingTime: z.string().optional().describe('Updated time (e.g. "7:00 PM")'),
+        cuisinePreference: z.enum(['Italian', 'Chinese', 'Indian', 'Japanese', 'Mexican', 'Continental', 'Other']).optional(),
         specialRequests: z.string().optional().describe('Updated special requests'),
-        seatingPreference: z.enum(['indoor', 'outdoor', 'no_preference']).optional().describe('Updated seating preference'),
+        seatingPreference: z.enum(['indoor', 'outdoor', 'no preference']).optional(),
     }),
     func: async ({ bookingId, ...updates }) => {
         logger.info(`Update booking tool called: ${bookingId}`, { updates });
@@ -170,10 +199,9 @@ export const updateBookingTool = new DynamicStructuredTool({
                 });
             }
 
-            // Apply updates
             if (updates.numberOfGuests) booking.numberOfGuests = updates.numberOfGuests;
-            if (updates.bookingDate) booking.bookingDate = updates.bookingDate;
-            if (updates.bookingTime) booking.bookingTime = updates.bookingTime;
+            if (updates.bookingDate) booking.bookingDate = new Date(updates.bookingDate);
+            if (updates.bookingTime) booking.bookingTime = normalizeBookingTime(updates.bookingTime);
             if (updates.cuisinePreference) booking.cuisinePreference = updates.cuisinePreference;
             if (updates.specialRequests !== undefined) booking.specialRequests = updates.specialRequests;
             if (updates.seatingPreference) booking.seatingPreference = updates.seatingPreference;
