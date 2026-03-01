@@ -160,9 +160,9 @@ export default function LandingPage() {
             </section>
 
             {/* ── Footer ── */}
-            <footer className="lp-footer">
-                <span>© 2025 WhisperBite</span>
-                <Link to="/admin/login" className="lp-footer-link">Admin Dashboard</Link>
+            <footer className="lp-footer" role="contentinfo">
+                <span>© 2025 WhisperBite · Mumbai, India</span>
+                <Link to="/admin/login" className="lp-footer-link" aria-label="Go to Admin Dashboard">Admin Dashboard</Link>
             </footer>
 
         </div>
