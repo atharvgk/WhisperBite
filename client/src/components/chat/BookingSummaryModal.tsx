@@ -16,7 +16,7 @@ export interface BookingSummaryData {
     weatherTemp?: number | null;
 }
 
-interface Props {
+export interface Props {
     data: BookingSummaryData | null;
     onClose: () => void;
     onReset?: () => void;

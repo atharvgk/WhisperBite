@@ -16,7 +16,7 @@ interface AnalyticsData {
     dailyTrend?: Array<{ date: string; confirmed: number; cancelled: number; total: number }>;
 }
 
-interface Props { data: AnalyticsData | null; }
+export interface Props { data: AnalyticsData | null; }
 
 export default function Analytics({ data }: Props) {
     if (!data) return <EmptyState icon={BarChart3} title="No analytics data" description="Bookings data will appear here" />;

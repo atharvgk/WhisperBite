@@ -1,6 +1,6 @@
 import { LucideIcon, Inbox } from 'lucide-react';
 
-interface Props {
+export interface Props {
     icon?: LucideIcon;
     title?: string;
     description?: string;

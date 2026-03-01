@@ -10,7 +10,7 @@ interface WeatherData {
     seatingRecommendation: string;
 }
 
-interface Props {
+export interface Props {
     data: WeatherData | null;
     onClose: () => void;
 }

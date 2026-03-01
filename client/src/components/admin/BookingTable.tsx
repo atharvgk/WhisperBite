@@ -19,7 +19,7 @@ export interface Booking {
     status: string;
 }
 
-interface Props {
+export interface Props {
     bookings: Booking[];
     search: string;
     onSearchChange: (v: string) => void;

@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 import { Bot, User } from 'lucide-react';
 import './ChatBubble.css';
 
-interface Props {
+export interface Props {
     role: 'user' | 'assistant';
     content: string;
     timestamp?: Date;
