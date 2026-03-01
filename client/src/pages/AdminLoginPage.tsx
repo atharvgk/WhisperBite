@@ -23,7 +23,7 @@ export default function AdminLoginPage() {
 
     if (isAuthenticated) return null;
 
-    const handleSubmit = async (e) => {
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setError('');
 

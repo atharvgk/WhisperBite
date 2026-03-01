@@ -1,8 +1,11 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import SkeletonLoader from './SkeletonLoader';
+import { ReactNode } from 'react';
 
-export default function ProtectedRoute({ children }) {
+interface Props { children: ReactNode; }
+
+export default function ProtectedRoute({ children }: Props) {
     const { isAuthenticated, loading } = useAuth();
 
     if (loading) {

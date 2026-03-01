@@ -8,7 +8,17 @@ import './Analytics.css';
 
 const COLORS = ['#6C63FF', '#FF6B6B', '#4ADE80', '#FBBF24', '#60A5FA', '#A78BFA', '#F472B6', '#34D399'];
 
-export default function Analytics({ data }) {
+interface AnalyticsData {
+    overview?: { total: number; confirmed: number; cancelled: number; cancellationRate: number; avgPartySize?: number };
+    peakHours?: Array<{ hour: string; bookings: number }>;
+    cuisineDistribution?: Array<{ name: string; value: number }>;
+    seatingDistribution?: Array<{ name: string; value: number }>;
+    dailyTrend?: Array<{ date: string; confirmed: number; cancelled: number; total: number }>;
+}
+
+interface Props { data: AnalyticsData | null; }
+
+export default function Analytics({ data }: Props) {
     if (!data) return <EmptyState icon={BarChart3} title="No analytics data" description="Bookings data will appear here" />;
 
     return (
@@ -35,7 +45,7 @@ export default function Analytics({ data }) {
 
             <div className="charts-grid">
                 {/* Peak Hours */}
-                {data.peakHours?.length > 0 && (
+                {(data.peakHours?.length ?? 0) > 0 && (
                     <div className="chart-box glass">
                         <h3>Peak Booking Hours</h3>
                         <ResponsiveContainer width="100%" height={280}>
@@ -58,7 +68,7 @@ export default function Analytics({ data }) {
                 )}
 
                 {/* Cuisine Distribution */}
-                {data.cuisineDistribution?.length > 0 && (
+                {(data.cuisineDistribution?.length ?? 0) > 0 && (
                     <div className="chart-box glass">
                         <h3>Cuisine Distribution</h3>
                         <ResponsiveContainer width="100%" height={280}>
@@ -72,9 +82,9 @@ export default function Analytics({ data }) {
                                     paddingAngle={3}
                                     dataKey="value"
                                     nameKey="name"
-                                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                                    label={({ name, percent }: { name?: string; percent?: number }) => `${name ?? ''} ${((percent ?? 0) * 100).toFixed(0)}%`}
                                 >
-                                    {data.cuisineDistribution.map((_, i) => (
+                                    {(data.cuisineDistribution ?? []).map((_, i) => (
                                         <Cell key={i} fill={COLORS[i % COLORS.length]} />
                                     ))}
                                 </Pie>
@@ -92,7 +102,7 @@ export default function Analytics({ data }) {
                 )}
 
                 {/* Seating Preferences */}
-                {data.seatingDistribution?.length > 0 && (
+                {(data.seatingDistribution?.length ?? 0) > 0 && (
                     <div className="chart-box glass">
                         <h3>Seating Preferences</h3>
                         <ResponsiveContainer width="100%" height={280}>
@@ -115,7 +125,7 @@ export default function Analytics({ data }) {
                 )}
 
                 {/* Daily Trend */}
-                {data.dailyTrend?.length > 0 && (
+                {(data.dailyTrend?.length ?? 0) > 0 && (
                     <div className="chart-box glass chart-wide">
                         <h3>Daily Booking Trend</h3>
                         <ResponsiveContainer width="100%" height={280}>

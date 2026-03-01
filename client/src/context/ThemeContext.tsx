@@ -1,8 +1,15 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
-const ThemeContext = createContext();
+interface ThemeContextValue {
+    theme: string;
+    toggleTheme: () => void;
+}
 
-export function ThemeProvider({ children }) {
+const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
+
+interface Props { children: ReactNode; }
+
+export function ThemeProvider({ children }: Props) {
     const [theme, setTheme] = useState(() => {
         const saved = localStorage.getItem('whisperbite-theme');
         return saved || 'dark';
@@ -24,7 +31,7 @@ export function ThemeProvider({ children }) {
     );
 }
 
-export function useTheme() {
+export function useTheme(): ThemeContextValue {
     const context = useContext(ThemeContext);
     if (!context) throw new Error('useTheme must be used within ThemeProvider');
     return context;

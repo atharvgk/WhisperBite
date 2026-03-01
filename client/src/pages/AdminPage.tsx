@@ -25,7 +25,7 @@ export default function AdminPage() {
 
     const fetchBookings = async () => {
         try {
-            const params = new URLSearchParams({ page, limit: 10 });
+            const params = new URLSearchParams({ page: String(page), limit: '10' });
             if (search) params.set('search', search);
             if (statusFilter) params.set('status', statusFilter);
             const res = await fetch(`${API_BASE}/bookings?${params}`, { headers });
@@ -58,7 +58,7 @@ export default function AdminPage() {
         fetchBookings();
     }, [page, search, statusFilter]);
 
-    const handleCancel = async (bookingId) => {
+    const handleCancel = async (bookingId: string) => {
         try {
             const res = await fetch(`${API_BASE}/bookings/${bookingId}`, {
                 method: 'DELETE',
@@ -77,7 +77,7 @@ export default function AdminPage() {
         }
     };
 
-    const handleStatusUpdate = async (bookingId, newStatus) => {
+    const handleStatusUpdate = async (bookingId: string, newStatus: string) => {
         try {
             const res = await fetch(`${API_BASE}/bookings/${bookingId}/status`, {
                 method: 'PATCH',

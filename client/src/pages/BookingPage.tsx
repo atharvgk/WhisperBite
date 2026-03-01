@@ -13,7 +13,11 @@ const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 const MESSAGES_KEY = 'whisperbite-messages';
 const SESSION_KEY = 'whisperbite-session';
 
-const INITIAL_MESSAGE = {
+interface Message { role: 'user' | 'assistant'; content: string; }
+interface WeatherInfo { temperature: number | null; condition: string; seatingRecommendation: string; description?: string; icon?: string; }
+interface BookingSummary { bookingId: string; customerName?: string; numberOfGuests?: number; bookingDate?: string; bookingTime?: string; cuisinePreference?: string; specialRequests?: string; seatingPreference?: string; }
+
+const INITIAL_MESSAGE: Message = {
     role: 'assistant',
     content: "👋 Hello! I'm WhisperBite, your AI reservation assistant. How can I help you today? You can type or use the microphone to speak."
 };
@@ -38,13 +42,13 @@ function loadMessages() {
     return [INITIAL_MESSAGE];
 }
 
-function saveMessages(messages) {
+function saveMessages(messages: Message[]) {
     try {
         sessionStorage.setItem(MESSAGES_KEY, JSON.stringify(messages));
     } catch { }
 }
 
-function tryParseWeather(text) {
+function tryParseWeather(text: string): WeatherInfo | null {
     try {
         const tempMatch = text.match(/(\d+)°?[CF]?\s*(celsius|fahrenheit)?/i);
         const condMatch = text.match(/(clear|cloudy|rain|snow|sunny|overcast|thunderstorm|drizzle)/i);
@@ -60,9 +64,9 @@ function tryParseWeather(text) {
     return null;
 }
 
-function tryParseBookingSummary(text) {
+function tryParseBookingSummary(text: string): BookingSummary | null {
     try {
-        const idMatch = text.match(/WB-[A-Z0-9]{8}/);
+        const idMatch = text.match(/BK-[A-Z0-9]+/);
         if (idMatch) {
             const nameMatch = text.match(/(?:name|Name)[:\s]+([^\n,]+)/i);
             const guestMatch = text.match(/(?:guests?|Guests?)[:\s]+(\d+)/i);
@@ -81,15 +85,15 @@ function tryParseBookingSummary(text) {
 }
 
 export default function BookingPage() {
-    const [messages, setMessages] = useState(loadMessages);
-    const [input, setInput] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
-    const [ttsEnabled, setTtsEnabled] = useState(true);
-    const [weatherData, setWeatherData] = useState(null);
-    const [bookingSummary, setBookingSummary] = useState(null);
-    const messagesEndRef = useRef(null);
-    const inputRef = useRef(null);
-    const sessionId = useRef(getSessionId());
+    const [messages, setMessages] = useState<Message[]>(loadMessages);
+    const [input, setInput] = useState<string>('');
+    const [isLoading, setIsLoading] = useState<boolean>(false);
+    const [ttsEnabled, setTtsEnabled] = useState<boolean>(true);
+    const [weatherData, setWeatherData] = useState<WeatherInfo | null>(null);
+    const [bookingSummary, setBookingSummary] = useState<BookingSummary | null>(null);
+    const messagesEndRef = useRef<HTMLDivElement>(null);
+    const inputRef = useRef<HTMLInputElement>(null);
+    const sessionId = useRef<string>(getSessionId());
 
     // Persist messages to sessionStorage whenever they change
     useEffect(() => {
@@ -100,7 +104,7 @@ export default function BookingPage() {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages, isLoading]);
 
-    const speakText = useCallback((text) => {
+    const speakText = useCallback((text: string) => {
         if (!ttsEnabled || !('speechSynthesis' in window)) return;
         // Strip emojis, markdown, and JSON from TTS
         const clean = text
@@ -116,7 +120,7 @@ export default function BookingPage() {
         speechSynthesis.speak(utterance);
     }, [ttsEnabled]);
 
-    const addMessage = useCallback((role, content) => {
+    const addMessage = useCallback((role: 'user' | 'assistant', content: string) => {
         setMessages(prev => {
             const updated = [...prev, { role, content }];
             saveMessages(updated);
@@ -124,7 +128,7 @@ export default function BookingPage() {
         });
     }, []);
 
-    const sendMessage = async (text) => {
+    const sendMessage = async (text: string) => {
         if (!text.trim() || isLoading) return;
 
         addMessage('user', text.trim());
@@ -164,12 +168,12 @@ export default function BookingPage() {
         }
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         sendMessage(input);
     };
 
-    const handleVoiceResult = (transcript) => {
+    const handleVoiceResult = (transcript: string) => {
         if (transcript) {
             setInput(transcript);
             sendMessage(transcript);

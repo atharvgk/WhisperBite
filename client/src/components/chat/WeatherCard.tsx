@@ -2,7 +2,20 @@ import { CloudSun, X } from 'lucide-react';
 import { motion } from 'framer-motion';
 import './WeatherCard.css';
 
-export default function WeatherCard({ data, onClose }) {
+interface WeatherData {
+    temperature: number | null;
+    condition: string;
+    description?: string;
+    icon?: string;
+    seatingRecommendation: string;
+}
+
+interface Props {
+    data: WeatherData | null;
+    onClose: () => void;
+}
+
+export default function WeatherCard({ data, onClose }: Props) {
     if (!data) return null;
 
     return (

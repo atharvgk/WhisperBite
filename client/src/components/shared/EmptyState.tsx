@@ -1,6 +1,12 @@
-import { Inbox } from 'lucide-react';
+import { LucideIcon, Inbox } from 'lucide-react';
 
-export default function EmptyState({ icon: Icon = Inbox, title = 'No data', description = '' }) {
+interface Props {
+    icon?: LucideIcon;
+    title?: string;
+    description?: string;
+}
+
+export default function EmptyState({ icon: Icon = Inbox, title = 'No data', description = '' }: Props) {
     return (
         <div style={{
             display: 'flex',

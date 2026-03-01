@@ -2,11 +2,35 @@ import { Search, ChevronLeft, ChevronRight, XCircle, CheckCircle2 } from 'lucide
 import EmptyState from '../shared/EmptyState';
 import './BookingTable.css';
 
-const STATUS_COLORS = {
+const STATUS_COLORS: Record<string, string> = {
     pending: 'badge-warning',
     confirmed: 'badge-success',
     cancelled: 'badge-error',
 };
+
+export interface Booking {
+    bookingId: string;
+    customerName: string;
+    numberOfGuests: number;
+    bookingDate: string;
+    bookingTime: string;
+    cuisinePreference: string;
+    seatingPreference?: string;
+    status: string;
+}
+
+interface Props {
+    bookings: Booking[];
+    search: string;
+    onSearchChange: (v: string) => void;
+    statusFilter: string;
+    onStatusFilterChange: (v: string) => void;
+    page: number;
+    totalPages: number;
+    onPageChange: (p: number) => void;
+    onCancel: (id: string) => void;
+    onStatusUpdate: (id: string, status: string) => void;
+}
 
 export default function BookingTable({
     bookings,
@@ -19,7 +43,7 @@ export default function BookingTable({
     onPageChange,
     onCancel,
     onStatusUpdate,
-}) {
+}: Props) {
     return (
         <div className="booking-table-wrapper">
             {/* Filters */}

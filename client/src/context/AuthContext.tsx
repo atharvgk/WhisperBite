@@ -1,12 +1,28 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
-const AuthContext = createContext();
+interface Admin {
+    email: string;
+    role: string;
+}
+
+interface AuthContextValue {
+    token: string | null;
+    admin: Admin | null;
+    loading: boolean;
+    isAuthenticated: boolean;
+    login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+    logout: () => void;
+}
+
+const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
-export function AuthProvider({ children }) {
-    const [token, setToken] = useState(() => localStorage.getItem('whisperbite-token'));
-    const [admin, setAdmin] = useState(null);
+interface Props { children: ReactNode; }
+
+export function AuthProvider({ children }: Props) {
+    const [token, setToken] = useState<string | null>(() => localStorage.getItem('whisperbite-token'));
+    const [admin, setAdmin] = useState<Admin | null>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -15,6 +31,7 @@ export function AuthProvider({ children }) {
         } else {
             setLoading(false);
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const verifyToken = async () => {
@@ -35,7 +52,7 @@ export function AuthProvider({ children }) {
         }
     };
 
-    const login = async (email, password) => {
+    const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
         const res = await fetch(`${API_BASE}/auth/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -72,7 +89,7 @@ export function AuthProvider({ children }) {
     );
 }
 
-export function useAuth() {
+export function useAuth(): AuthContextValue {
     const context = useContext(AuthContext);
     if (!context) throw new Error('useAuth must be used within AuthProvider');
     return context;
