@@ -7,7 +7,7 @@ import logger from '../utils/logger';
 // GET /api/bookings
 export async function getAllBookings(req: Request, res: Response): Promise<void> {
     try {
-        const { status, search, page = '1', limit = '20', sortBy = 'createdAt', order = 'desc' } = req.query;
+        const { status, search, dateFrom, dateTo, page = '1', limit = '20', sortBy = 'createdAt', order = 'desc' } = req.query;
 
         const filter: any = {};
         if (status && typeof status === 'string' && ['pending', 'confirmed', 'cancelled'].includes(status)) {
@@ -19,6 +19,17 @@ export async function getAllBookings(req: Request, res: Response): Promise<void>
                 { bookingId: { $regex: search, $options: 'i' } },
                 { cuisinePreference: { $regex: search, $options: 'i' } },
             ];
+        }
+        if (dateFrom || dateTo) {
+            filter.bookingDate = {};
+            if (dateFrom && typeof dateFrom === 'string') {
+                filter.bookingDate.$gte = new Date(dateFrom);
+            }
+            if (dateTo && typeof dateTo === 'string') {
+                const end = new Date(dateTo);
+                end.setHours(23, 59, 59, 999);
+                filter.bookingDate.$lte = end;
+            }
         }
 
         const pageNum = Math.max(1, parseInt(page as string, 10));
