@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Lato:wght@300;400;700&display=swap');
 
 :root {
   /* Brand Colors */
@@ -46,6 +47,14 @@
 
   /* Typography */
   --font: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-serif: 'Playfair Display', Georgia, serif;
+  --font-sans: 'Lato', 'Inter', sans-serif;
+
+  /* Landing editorial palette */
+  --bg: #0f0e0d;
+  --landing-accent: #c9a96e;
+  --text: #f5f0ea;
+  --text-muted-landing: #8c8278;
 }
 
 [data-theme="light"] {
