@@ -1,45 +1,63 @@
 import { DynamicStructuredTool } from '@langchain/core/tools';
 import { z } from 'zod';
+import { Booking } from '../models/Booking';
 import logger from '../utils/logger';
 
+/**
+ * summaryTool — fetches a booking from DB by bookingId and returns a formatted confirmation string.
+ * This is called AFTER create_booking succeeds to give the user a clean readable summary.
+ */
 export const summaryTool = new DynamicStructuredTool({
-    name: 'format_booking_summary',
-    description: 'Format a structured booking summary for the customer to review BEFORE confirming a reservation. IMPORTANT: Only call this tool when you have ALL required fields (customerName, numberOfGuests, bookingDate, bookingTime) with real values collected from the customer. Do NOT call this with placeholder or "Unknown" values.',
+    name: 'get_booking_summary',
+    description: 'Fetch a confirmed booking from the database by bookingId and return a formatted human-readable confirmation. Call this after create_booking succeeds to show the user their full booking details.',
     schema: z.object({
-        customerName: z.string().describe('Customer name — must be a real name from the customer'),
-        numberOfGuests: z.union([z.number(), z.string()]).transform(val => {
-            const n = typeof val === 'string' ? parseInt(val, 10) : val;
-            return isNaN(n) ? 1 : n;
-        }).describe('Number of guests — must be a real number from the customer'),
-        bookingDate: z.string().describe('Booking date in YYYY-MM-DD format — must be a real date'),
-        bookingTime: z.string().describe('Booking time in HH:MM format — must be a real time'),
-        cuisinePreference: z.string().optional().describe('Cuisine preference if provided'),
-        specialRequests: z.string().optional().describe('Special requests if any'),
-        seatingPreference: z.string().optional().describe('Seating preference if specified'),
-        weatherInfo: z.string().optional().describe('Weather summary if available from check_weather'),
+        bookingId: z.string().describe('The booking ID returned from create_booking (e.g., BK-1234567890)'),
     }),
-    func: async (input) => {
-        logger.info('Summary tool called', { input });
+    func: async ({ bookingId }) => {
+        logger.info(`Summary tool called for bookingId: ${bookingId}`);
 
-        const guests = typeof input.numberOfGuests === 'string'
-            ? parseInt(input.numberOfGuests, 10) || 1
-            : input.numberOfGuests;
+        try {
+            const booking = await Booking.findOne({ bookingId }).lean();
 
-        const summary = {
-            title: '📋 Booking Summary',
-            details: {
-                '👤 Name': input.customerName,
-                '👥 Guests': guests,
-                '📅 Date': input.bookingDate,
-                '🕐 Time': input.bookingTime,
-                '🍽️ Cuisine': input.cuisinePreference || 'Any',
-                '💺 Seating': input.seatingPreference || 'No preference',
-                '📝 Special Requests': input.specialRequests || 'None',
-            },
-            weather: input.weatherInfo || null,
-            confirmationPrompt: 'Would you like to confirm this reservation?',
-        };
+            if (!booking) {
+                return JSON.stringify({
+                    success: false,
+                    error: `No booking found with ID ${bookingId}. The booking may not have been saved yet.`,
+                });
+            }
 
-        return JSON.stringify(summary);
+            const formattedDate = new Date(booking.bookingDate).toLocaleDateString('en-IN', {
+                weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+            });
+
+            const summary = [
+                `✅ Booking Confirmed!`,
+                `📋 Booking ID: ${booking.bookingId}`,
+                `👤 Name: ${booking.customerName}`,
+                `📅 Date: ${formattedDate}`,
+                `🕐 Time: ${booking.bookingTime}`,
+                `👥 Guests: ${booking.numberOfGuests}`,
+                `🍽️ Cuisine: ${booking.cuisinePreference}`,
+                `💺 Seating: ${booking.seatingPreference}`,
+                booking.specialRequests ? `📝 Special Requests: ${booking.specialRequests}` : '',
+                booking.weatherInfo?.condition && booking.weatherInfo.condition !== 'unknown'
+                    ? `🌤️ Weather: ${booking.weatherInfo.condition} · ${booking.weatherInfo.temperature !== null ? `${booking.weatherInfo.temperature}°C` : 'N/A'} — ${booking.weatherInfo.seatingRecommendation}`
+                    : '',
+                `\nWe look forward to welcoming you at WhisperBite, Mumbai! 🍽️`,
+            ].filter(Boolean).join('\n');
+
+            logger.info(`Summary generated for ${bookingId}`);
+            return JSON.stringify({
+                success: true,
+                bookingId: booking.bookingId,
+                summary,
+            });
+        } catch (error: any) {
+            logger.error(`Summary tool error: ${error.message}`);
+            return JSON.stringify({
+                success: false,
+                error: 'Failed to fetch booking summary. Please provide the booking ID to the customer.',
+            });
+        }
     },
 });
