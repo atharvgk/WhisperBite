@@ -1,4 +1,4 @@
-import { Search, ChevronLeft, ChevronRight, XCircle, CheckCircle2 } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight, XCircle, CheckCircle2, Download } from 'lucide-react';
 import EmptyState from '../shared/EmptyState';
 import './BookingTable.css';
 
@@ -25,11 +25,16 @@ export interface Props {
     onSearchChange: (v: string) => void;
     statusFilter: string;
     onStatusFilterChange: (v: string) => void;
+    dateFrom: string;
+    dateTo: string;
+    onDateFromChange: (v: string) => void;
+    onDateToChange: (v: string) => void;
     page: number;
     totalPages: number;
     onPageChange: (p: number) => void;
     onCancel: (id: string) => void;
     onStatusUpdate: (id: string, status: string) => void;
+    onExportCsv: () => void;
 }
 
 export default function BookingTable({
@@ -38,11 +43,16 @@ export default function BookingTable({
     onSearchChange,
     statusFilter,
     onStatusFilterChange,
+    dateFrom,
+    dateTo,
+    onDateFromChange,
+    onDateToChange,
     page,
     totalPages,
     onPageChange,
     onCancel,
     onStatusUpdate,
+    onExportCsv,
 }: Props) {
     return (
         <div className="booking-table-wrapper">
@@ -69,6 +79,34 @@ export default function BookingTable({
                     <option value="confirmed">Confirmed</option>
                     <option value="cancelled">Cancelled</option>
                 </select>
+                <div className="date-range">
+                    <input
+                        type="date"
+                        value={dateFrom}
+                        onChange={e => onDateFromChange(e.target.value)}
+                        className="date-filter"
+                        aria-label="Filter from date"
+                        title="From date"
+                    />
+                    <span className="date-sep">–</span>
+                    <input
+                        type="date"
+                        value={dateTo}
+                        onChange={e => onDateToChange(e.target.value)}
+                        className="date-filter"
+                        aria-label="Filter to date"
+                        title="To date"
+                    />
+                </div>
+                <button
+                    className="export-btn"
+                    onClick={onExportCsv}
+                    title="Export bookings as CSV"
+                    aria-label="Export CSV"
+                >
+                    <Download size={15} />
+                    Export CSV
+                </button>
             </div>
 
             {/* Table */}

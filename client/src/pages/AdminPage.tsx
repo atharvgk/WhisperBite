@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
-import BookingTable from '../components/admin/BookingTable';
+import BookingTable, { type Booking } from '../components/admin/BookingTable';
 import Analytics from '../components/admin/Analytics';
 import SkeletonLoader from '../components/shared/SkeletonLoader';
 import { BarChart3, Table } from 'lucide-react';
@@ -13,11 +13,13 @@ const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 export default function AdminPage() {
     const { token } = useAuth();
     const [tab, setTab] = useState('bookings');
-    const [bookings, setBookings] = useState([]);
+    const [bookings, setBookings] = useState<Booking[]>([]);
     const [analytics, setAnalytics] = useState(null);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
+    const [dateFrom, setDateFrom] = useState('');
+    const [dateTo, setDateTo] = useState('');
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
 
@@ -28,6 +30,8 @@ export default function AdminPage() {
             const params = new URLSearchParams({ page: String(page), limit: '10' });
             if (search) params.set('search', search);
             if (statusFilter) params.set('status', statusFilter);
+            if (dateFrom) params.set('dateFrom', dateFrom);
+            if (dateTo) params.set('dateTo', dateTo);
             const res = await fetch(`${API_BASE}/bookings?${params}`, { headers });
             const data = await res.json();
             if (data.success) {
@@ -56,7 +60,7 @@ export default function AdminPage() {
 
     useEffect(() => {
         fetchBookings();
-    }, [page, search, statusFilter]);
+    }, [page, search, statusFilter, dateFrom, dateTo]);
 
     const handleCancel = async (bookingId: string) => {
         try {
@@ -97,6 +101,24 @@ export default function AdminPage() {
         }
     };
 
+    const handleExportCsv = () => {
+        const headerRow = ['Booking ID', 'Name', 'Guests', 'Date', 'Time', 'Cuisine', 'Seating', 'Status'];
+        const rows = bookings.map(b =>
+            [b.bookingId, b.customerName, b.numberOfGuests, b.bookingDate,
+                b.bookingTime, b.cuisinePreference, b.seatingPreference ?? '', b.status]
+                .map(v => `"${String(v).replace(/"/g, '""')}"`)
+                .join(',')
+        );
+        const csv = [headerRow.join(','), ...rows].join('\n');
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `whisperbite-bookings-${new Date().toISOString().slice(0, 10)}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+    };
+
     return (
         <div className="admin-page">
             <div className="admin-header container">
@@ -125,14 +147,19 @@ export default function AdminPage() {
                         <BookingTable
                             bookings={bookings}
                             search={search}
-                            onSearchChange={setSearch}
+                            onSearchChange={v => { setSearch(v); setPage(1); }}
                             statusFilter={statusFilter}
-                            onStatusFilterChange={setStatusFilter}
+                            onStatusFilterChange={v => { setStatusFilter(v); setPage(1); }}
+                            dateFrom={dateFrom}
+                            dateTo={dateTo}
+                            onDateFromChange={v => { setDateFrom(v); setPage(1); }}
+                            onDateToChange={v => { setDateTo(v); setPage(1); }}
                             page={page}
                             totalPages={totalPages}
                             onPageChange={setPage}
                             onCancel={handleCancel}
                             onStatusUpdate={handleStatusUpdate}
+                            onExportCsv={handleExportCsv}
                         />
                     </motion.div>
                 ) : (
