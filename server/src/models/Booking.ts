@@ -1,7 +1,8 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
 export type BookingStatus = 'pending' | 'confirmed' | 'cancelled';
-export type SeatingPreference = 'indoor' | 'outdoor' | 'no_preference';
+export type SeatingPreference = 'indoor' | 'outdoor' | 'no preference';
+export type CuisinePreference = 'Italian' | 'Chinese' | 'Indian' | 'Japanese' | 'Mexican' | 'Continental' | 'Other';
 
 // Valid status transitions
 const STATUS_TRANSITIONS: Record<BookingStatus, BookingStatus[]> = {
@@ -13,14 +14,18 @@ const STATUS_TRANSITIONS: Record<BookingStatus, BookingStatus[]> = {
 export interface IBooking extends Document {
     bookingId: string;
     customerName: string;
+    customerPhone?: string;
+    customerEmail?: string;
     numberOfGuests: number;
-    bookingDate: string; // YYYY-MM-DD
-    bookingTime: string; // HH:MM
-    cuisinePreference: string;
-    specialRequests: string;
+    bookingDate: Date;
+    bookingTime: string; // "7:00 PM" format
+    cuisinePreference: CuisinePreference;
+    specialRequests?: string;
     weatherInfo: {
         temperature: number | null;
         condition: string;
+        description: string;
+        icon: string;
         seatingRecommendation: string;
     };
     seatingPreference: SeatingPreference;
@@ -37,30 +42,41 @@ const BookingSchema = new Schema<IBooking>(
             required: true,
             unique: true,
             index: true,
+            default: () => 'BK-' + Date.now(),
         },
         customerName: {
             type: String,
             required: true,
             trim: true,
         },
+        customerPhone: {
+            type: String,
+            trim: true,
+        },
+        customerEmail: {
+            type: String,
+            trim: true,
+            lowercase: true,
+        },
         numberOfGuests: {
             type: Number,
             required: true,
             min: [1, 'Must have at least 1 guest'],
-            max: [50, 'Maximum 50 guests per booking'],
+            max: [20, 'Maximum 20 guests per booking'],
         },
         bookingDate: {
-            type: String,
+            type: Date,
             required: true,
         },
         bookingTime: {
             type: String,
             required: true,
+            // Expected format: "7:00 PM"
         },
         cuisinePreference: {
             type: String,
-            default: 'any',
-            trim: true,
+            required: true,
+            enum: ['Italian', 'Chinese', 'Indian', 'Japanese', 'Mexican', 'Continental', 'Other'],
         },
         specialRequests: {
             type: String,
@@ -70,12 +86,14 @@ const BookingSchema = new Schema<IBooking>(
         weatherInfo: {
             temperature: { type: Number, default: null },
             condition: { type: String, default: 'unknown' },
+            description: { type: String, default: '' },
+            icon: { type: String, default: '' },
             seatingRecommendation: { type: String, default: 'indoor' },
         },
         seatingPreference: {
             type: String,
-            enum: ['indoor', 'outdoor', 'no_preference'],
-            default: 'no_preference',
+            enum: ['indoor', 'outdoor', 'no preference'],
+            default: 'no preference',
         },
         status: {
             type: String,
@@ -85,6 +103,7 @@ const BookingSchema = new Schema<IBooking>(
     },
     {
         timestamps: true,
+        optimisticConcurrency: true,
     }
 );
 
@@ -93,6 +112,9 @@ BookingSchema.index({ bookingDate: 1, bookingTime: 1 });
 
 // Index for status-based queries
 BookingSchema.index({ status: 1 });
+
+// Index for customer name lookups (for double-booking detection)
+BookingSchema.index({ customerName: 1, bookingDate: 1, bookingTime: 1 });
 
 // Status transition validation
 BookingSchema.methods.canTransitionTo = function (newStatus: BookingStatus): boolean {
