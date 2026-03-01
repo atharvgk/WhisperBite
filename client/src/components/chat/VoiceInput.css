@@ -1,6 +1,53 @@
 .voice-input-wrapper {
     position: relative;
+    display: flex;
+    align-items: center;
+    gap: 6px;
 }
+
+.tts-mute-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-input);
+    color: var(--text-secondary);
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+
+.tts-mute-btn:hover {
+    background: var(--primary-light);
+    color: var(--primary);
+}
+
+.speaking-stop-btn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    background: var(--accent);
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 500;
+    transition: all 0.2s;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.speaking-stop-btn:hover {
+    opacity: 0.85;
+}
+
+.voice-unsupported {
+    font-size: 0.7rem;
+    color: var(--text-muted, #888);
+    white-space: nowrap;
+}
+
 
 .mic-btn {
     width: 40px;
