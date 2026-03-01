@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Volume2, VolumeX } from 'lucide-react';
+import { Send } from 'lucide-react';
 import ChatBubble from '../components/chat/ChatBubble';
 import VoiceInput from '../components/chat/VoiceInput';
 import TypingIndicator from '../components/shared/TypingIndicator';
@@ -23,17 +23,17 @@ const INITIAL_MESSAGE: Message = {
 };
 
 function getSessionId() {
-    let id = sessionStorage.getItem(SESSION_KEY);
+    let id = localStorage.getItem(SESSION_KEY);
     if (!id) {
         id = 'sess-' + Math.random().toString(36).substring(2, 15);
-        sessionStorage.setItem(SESSION_KEY, id);
+        localStorage.setItem(SESSION_KEY, id);
     }
     return id;
 }
 
 function loadMessages() {
     try {
-        const stored = sessionStorage.getItem(MESSAGES_KEY);
+        const stored = localStorage.getItem(MESSAGES_KEY);
         if (stored) {
             const parsed = JSON.parse(stored);
             if (Array.isArray(parsed) && parsed.length > 0) return parsed;
@@ -44,7 +44,7 @@ function loadMessages() {
 
 function saveMessages(messages: Message[]) {
     try {
-        sessionStorage.setItem(MESSAGES_KEY, JSON.stringify(messages));
+        localStorage.setItem(MESSAGES_KEY, JSON.stringify(messages));
     } catch { }
 }
 
@@ -113,9 +113,18 @@ export default function BookingPage() {
             .replace(/\{[\s\S]*?\}/g, '')   // strip any JSON blobs
             .trim();
         if (!clean) return;
+
         const utterance = new SpeechSynthesisUtterance(clean);
-        utterance.rate = 1;
-        utterance.pitch = 1;
+        utterance.rate = 0.9;
+        utterance.pitch = 1.0;
+
+        // Voice selection: Google UK English Female → Microsoft Zira → first available
+        const voices = speechSynthesis.getVoices();
+        const preferred = voices.find(v => v.name.includes('Google UK English Female'))
+            ?? voices.find(v => v.name.includes('Microsoft Zira'))
+            ?? voices[0];
+        if (preferred) utterance.voice = preferred;
+
         speechSynthesis.cancel();
         speechSynthesis.speak(utterance);
     }, [ttsEnabled]);
@@ -181,8 +190,8 @@ export default function BookingPage() {
     };
 
     const handleClearChat = () => {
-        sessionStorage.removeItem(MESSAGES_KEY);
-        sessionStorage.removeItem(SESSION_KEY);
+        localStorage.removeItem(MESSAGES_KEY);
+        localStorage.removeItem(SESSION_KEY);
         sessionId.current = getSessionId();
         setMessages([INITIAL_MESSAGE]);
         setWeatherData(null);
@@ -199,17 +208,6 @@ export default function BookingPage() {
                         <span className="status-text">Online</span>
                     </div>
                     <div className="chat-header-actions">
-                        <button
-                            className="tts-toggle"
-                            onClick={() => {
-                                setTtsEnabled(!ttsEnabled);
-                                if (ttsEnabled) speechSynthesis.cancel();
-                            }}
-                            aria-label={ttsEnabled ? 'Mute voice' : 'Unmute voice'}
-                            title={ttsEnabled ? 'Mute voice' : 'Unmute voice'}
-                        >
-                            {ttsEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />}
-                        </button>
                         <button
                             className="tts-toggle"
                             onClick={handleClearChat}
@@ -240,7 +238,17 @@ export default function BookingPage() {
                 )}
 
                 <form className="chat-input-area" onSubmit={handleSubmit}>
-                    <VoiceInput onResult={handleVoiceResult} disabled={isLoading} />
+                    <VoiceInput
+                        onResult={handleVoiceResult}
+                        disabled={isLoading}
+                        isMuted={!ttsEnabled}
+                        onToggleMute={() => {
+                            setTtsEnabled(prev => {
+                                if (prev) speechSynthesis.cancel();
+                                return !prev;
+                            });
+                        }}
+                    />
                     <input
                         ref={inputRef}
                         type="text"
