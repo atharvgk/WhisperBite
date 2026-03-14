@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "tsc",
+    "build": "node --max_old_space_size=4096 node_modules/typescript/bin/tsc",
     "start": "node dist/index.js",
     "seed": "tsx src/scripts/seedAdmin.ts",
     "typecheck": "tsc --noEmit"
