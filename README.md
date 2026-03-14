@@ -24,10 +24,10 @@
 
 | Feature | Description |
 |---|---|
-| **AI Reservation Agent** | LangChain tool-calling loop with Groq LLaMA-3.3-70B � collects name, date, time, guests, cuisine, seating, special requests |
+| **AI Reservation Agent** | LangChain tool-calling loop with Groq LLaMA-3.3-70B - collects name, date, time, guests, cuisine, seating, special requests |
 | **Voice Booking (Web Speech API)** | Browser-native STT (en-IN locale) + TTS with mute toggle and live speaking indicator |
 | **Multi-turn Conversation** | Session-aware slot filling; agent corrects, confirms, and re-asks misunderstood fields |
-| **Weather-Aware Seating** | OpenWeatherMap forecast for booking date ? recommends indoor/outdoor based on Mumbai climate |
+| **Weather-Aware Seating** | OpenWeatherMap forecast for booking date -> recommends indoor/outdoor based on Mumbai climate |
 | **Booking Summary Modal** | Copy-to-clipboard + "Book Another Table" reset after confirmation |
 | **Admin Dashboard** | JWT-protected; view/confirm/cancel bookings, date range filter, CSV export, analytics charts |
 | **Editorial Dark UI** | Playfair Display headings, gold accent (#c9a96e), Framer Motion animations |
@@ -104,14 +104,14 @@ graph TB
 ```
 WhisperBite/
 +-- client/                    # React + TypeScript frontend
-�   +-- src/
-�       +-- components/
-�       �   +-- admin/         # BookingTable, Analytics
-�       �   +-- chat/          # ChatBubble, VoiceInput, WeatherCard, BookingSummaryModal
-�       �   +-- shared/        # Navbar, SkeletonLoader, TypingIndicator, ProtectedRoute
-�       +-- context/           # AuthContext, ThemeContext
-�       +-- pages/             # LandingPage, BookingPage, AdminPage, AdminLoginPage
-�       +-- styles/            # globals.css
+    +-- src/
+        +-- components/
+            +-- admin/         # BookingTable, Analytics
+            +-- chat/          # ChatBubble, VoiceInput, WeatherCard, BookingSummaryModal
+            +-- shared/        # Navbar, SkeletonLoader, TypingIndicator, ProtectedRoute
+        +-- context/           # AuthContext, ThemeContext
+        +-- pages/             # LandingPage, BookingPage, AdminPage, AdminLoginPage
+        +-- styles/            # globals.css
 +-- server/                    # Express + TypeScript backend
     +-- src/
         +-- agents/            # reservationAgent.ts (LangChain tool-calling loop)
@@ -176,11 +176,11 @@ VITE_API_URL=http://localhost:5000/api
 ## Running Locally
 
 ```bash
-# Terminal 1 � start the backend
+# Terminal 1 - start the backend
 cd server
 npm run dev
 
-# Terminal 2 � start the frontend
+# Terminal 2 - start the frontend
 cd client
 npm run dev
 ```
@@ -205,7 +205,7 @@ npx ts-node src/scripts/seedAdmin.ts
 |---|---|---|
 | `POST` | `/api/chat` | Send message to AI agent |
 
-### Bookings (Admin � JWT required)
+### Bookings (Admin - JWT required)
 
 | Method | Endpoint | Description |
 |---|---|---|
@@ -218,7 +218,7 @@ npx ts-node src/scripts/seedAdmin.ts
 
 | Method | Endpoint | Description |
 |---|---|---|
-| `POST` | `/api/auth/login` | Admin login � returns JWT |
+| `POST` | `/api/auth/login` | Admin login - returns JWT |
 
 ---
 
@@ -226,7 +226,7 @@ npx ts-node src/scripts/seedAdmin.ts
 
 ### 1. Voice Booking
 
-The `VoiceInput` component uses the browser's `SpeechRecognition` API (en-IN locale) for speech-to-text. Interim transcripts display in real-time while the user speaks. On finalisation the transcript is sent to the agent. Text-to-speech uses `SpeechSynthesis` with voice priority: Google UK English Female ? Microsoft Zira ? first available. A mute toggle and live speaking indicator with stop button are included.
+The `VoiceInput` component uses the browser's `SpeechRecognition` API (en-IN locale) for speech-to-text. Interim transcripts display in real-time while the user speaks. On finalisation the transcript is sent to the agent. Text-to-speech uses `SpeechSynthesis` with voice priority: Google UK English Female -> Microsoft Zira -> first available. A mute toggle and live speaking indicator with stop button are included.
 
 ### 2. AI Reservation Agent
 
@@ -234,20 +234,20 @@ The `VoiceInput` component uses the browser's `SpeechRecognition` API (en-IN loc
 
 | Tool | Purpose |
 |---|---|
-| `check_availability` | Validates slot availability; returns �2hr alternatives on conflict |
+| `check_availability` | Validates slot availability; returns +/-2hr alternatives on conflict |
 | `create_booking` | Writes booking to MongoDB with BK-{timestamp} ID |
 | `check_weather` | Fetches OWM forecast for the booking date; recommends seating |
 | `get_booking_summary` | Retrieves and formats the full confirmation details |
 
-The agent explicitly confirms the parsed date ("I have Friday, 14 March at 7:00 PM � is that right?") before booking.
+The agent explicitly confirms the parsed date ("I have Friday, 14 March at 7:00 PM - is that right?") before booking.
 
 ### 3. Weather-Aware Seating
 
 `weatherTool.ts` queries the OWM 5-day forecast and finds the closest 3-hour entry to the booking datetime. It extracts `description` (e.g. "light rain") and `icon` (e.g. "10d"), then applies Mumbai-climate logic:
 
-- 18�35�C, no precipitation ? **outdoor**
-- >35�C ? **indoor (AC recommended)**
-- Rain / thunderstorm ? **indoor**
+- 18-35°C, no precipitation -> **outdoor**
+- >35°C -> **indoor (AC recommended)**
+- Rain / thunderstorm -> **indoor**
 
 The `WeatherCard` is rendered **inline in the chat** immediately after the assistant message that contains weather data.
 
@@ -273,7 +273,7 @@ Access at `/admin/login` with seeded credentials.
 ### Backend
 
 - [x] Booking schema: `bookingId` (BK-{timestamp}), `bookingDate` (Date type), `bookingTime` (12h string), `cuisinePreference` enum, `weatherInfo.description`, `weatherInfo.icon`, `numberOfGuests` max 20, `seatingPreference` with "no preference" option, `optimisticConcurrency: true`
-- [x] `availabilityTool`: double-booking detection (same name + date + time), capacity check via `config.maxGuestsPerSlot`, �2hr alternative slots from 11 AM�9 PM range
+- [x] `availabilityTool`: double-booking detection (same name + date + time), capacity check via `config.maxGuestsPerSlot`, +/-2hr alternative slots from 11 AM - 9 PM range
 - [x] `bookingTool`: BK-timestamp ID generation, `bookingDate: new Date(input.bookingDate)`, 12h time normalisation, weather `description` + `icon` stored
 - [x] `weatherTool`: default city Mumbai, extracts `description` + `icon` from OWM response, seating logic based on Mumbai climate thresholds
 - [x] `summaryTool`: fetches booking by `bookingId` from MongoDB, returns formatted emoji string
@@ -282,15 +282,15 @@ Access at `/admin/login` with seeded credentials.
 
 ### Frontend
 
-- [x] TypeScript migration � all `.jsx` ? `.tsx`, explicit prop interfaces on every component
+- [x] TypeScript migration - all `.jsx` -> `.tsx`, explicit prop interfaces on every component
 - [x] `VoiceInput`: Web Speech API (replaces MediaRecorder/Groq Whisper), `lang: 'en-IN'`, interim transcripts, pulse ring animation, cancel TTS on mic press, mute toggle with Volume2/VolumeX icon, speaking indicator + StopCircle stop button
 - [x] Session ID persisted in `localStorage` (not `sessionStorage`)
 - [x] `LandingPage`: editorial dark theme (#0f0e0d), Playfair Display headings, hero with italic emphasis, 3-feature card grid, 4-step "How It Works" timeline with connectors, footer with Admin Dashboard link
-- [x] `ChatBubble`: timestamps shown on hover (`opacity: 0` ? `opacity: 1` CSS transition)
+- [x] `ChatBubble`: timestamps shown on hover (`opacity: 0` -> `opacity: 1` CSS transition)
 - [x] `WeatherCard` rendered inline after the assistant message containing weather data (not floating outside chat)
 - [x] `BookingSummaryModal`: copy-to-clipboard with `toast.success`, "Book Another Table" calls `onReset` / `handleClearChat`
 - [x] Admin `BookingTable`: date range filter inputs (dateFrom / dateTo), CSV export button with `Blob` + `URL.createObjectURL`
 
 ---
 
-*WhisperBite � Mumbai's smartest table, reserved by voice.*
+*WhisperBite - Mumbai's smartest table, reserved by voice.*
